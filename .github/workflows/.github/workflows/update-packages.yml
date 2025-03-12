@@ -1,0 +1,59 @@
+name: Update WinGet Packages
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 */8 * * *" # Scheduled to run every 8 hours
+
+jobs:
+  update:
+    name: Update package ${{ matrix.id }}
+    runs-on: ubuntu-24.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: "WarcraftLogs.Uploader"
+            repo: "RPGLogs/Uploaders-warcraftlogs"
+            url: "https://github.com/RPGLogs/Uploaders-warcraftlogs/releases/download/v{VERSION}/warcraftlogs-v{VERSION}.exe"
+          - id: "ossia.score"
+            repo: "ossia/score"
+            url: "https://github.com/ossia/score/releases/download/v{VERSION}/ossia.score-{VERSION}-win64.exe"
+          - id: "Hydrogen-Music.Hydrogen"
+            repo: "Hydrogen-Music/hydrogen"
+            url: "https://github.com/hydrogen-music/hydrogen/releases/download/{VERSION}/Hydrogen-{VERSION}-win64.exe"
+          - id: "xyproto.algernon"
+            repo: "xyproto/algernon"
+            url: "https://github.com/xyproto/algernon/releases/download/v{VERSION}/algernon-{VERSION}-windows_x86_64_static.zip"
+          - id: "LesFerch.WinSetView"
+            repo: "LesFerch/WinSetView"
+            url: "https://github.com/LesFerch/WinSetView/releases/download/{VERSION}/WinSetView-Setup.exe"
+          - id: "TeraTermProject.teraterm5"
+            repo: "TeraTermProject/teraterm"
+            url: "https://github.com/TeraTermProject/teraterm/releases/download/v{VERSION}/teraterm-{VERSION}.exe"
+          - id: "ChaosRecipeEnhancer.ChaosRecipeEnhancer"
+            repo: "ChaosRecipeEnhancer/ChaosRecipeEnhancer"
+            url: "https://github.com/ChaosRecipeEnhancer/ChaosRecipeEnhancer/releases/download/{VERSION}/ChaosRecipeEnhancer-Setup.msi"
+
+    steps:
+      - name: Update Packages
+        uses: michidk/winget-updater@latest
+        with:
+          komac-version: "2.11.0"
+          komac-token: ${{ secrets.KOMAC_TOKEN }}
+          identifier: ${{ matrix.id }}
+          repo: ${{ matrix.repo }}
+          url: ${{ matrix.url }}
+
+  cleanup:
+    name: Cleanup branches
+    needs: update # Not necessarily needed as PRs don't get closed that quick but still nice to have it in order
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Run Komac
+        uses: michidk/run-komac@latest
+        with:
+          komac-version: "2.11.0"
+          args: "cleanup --only-merged --token=${{ secrets.KOMAC_TOKEN }}"
